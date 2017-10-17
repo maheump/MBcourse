@@ -5,29 +5,18 @@
 %% Initialization
 %  ==============
 
-% Clear the place
-clear; close('all');
-
-% Locate and load the data
-datafile = '/Users/Maxime/Documents/MATLAB/MBcourse/SimDataForCourse_StudentsData.mat';
-if exist(datafile, 'file') == 0
-    [filename, pathname] = uigetfile({'*.mat'});
-    datafile = [pathname, filename];
-end
-load(datafile, 'design', 'data', 'volatility');
+% If the required variables are not in the workspace, load a data file
+%datafile = '/Users/Maxime/Documents/MATLAB/MBcourse/SimDataForCourse_StudentsData.mat';
+%load(datafile, 'design', 'data', 'volatility');
 
 % Folder in which to save the generated figures
-wheretosave = '/Users/Maxime/Documents/My courses/A hands-on introduction to the model-based approach in neuroscience/data/';
-if exist(wheretosave, 'dir') == 0
-    wheretosave = uigetdir;
-    wheretosave = [wheretosave, filesep];
-end
+%if ~exist(dirfigsave, 'dir'), dirfigsave = uigetdir; end
 
 %% Display the design and the choices
 %  ==================================
 
 % Prepare the window
-figure('Position', [0.2328 0.3892 0.5344 0.1825]);
+figure('Color', ones(1,3), 'Units', 'Normalized', 'Position', [0.2328 0.3892 0.5344 0.1825]);
 col = mat2cell(winter(6), ones(1,6)); col = col([2,5],:);
 
 % Plot the properties of the design
@@ -51,29 +40,25 @@ legend({'p(reward|A)', 'p(reward|B)'}, 'Location', 'EastOutside');
 % Save the figure
 if exist('volatility', 'var') && ~isempty(volatility)
     ylabel(upper({sprintf('%s volatility', volatility),''}), 'FontWeight', 'Bold');
-    save2pdf([wheretosave, sprintf('DesignSimu%s.pdf', upper(volatility))]);
+    save2pdf(fullfile(dirfigsave, sprintf('DesignSimu%s.pdf', upper(volatility))));
 else
     ylabel({'YOUR DATA',''}, 'FontWeight', 'Bold');
-    save2pdf([wheretosave, 'DesignData.pdf']);
+    save2pdf(fullfile(dirfigsave, 'DesignData.pdf'));
 end
 
 %% Model-free analysis: performance
 %  ================================
-
-% Get chance level
-chance = mean(design.feedbackprob .* (1/numel(unique(data.choice))));
 
 % Get averaged subject's performance
 M = mean(data.choiceOutcome);
 S = std(data.choiceOutcome) / sqrt(numel(data.choiceOutcome));
 
 % Prepare the window
-figure('Position', [0.4479 0.2508 0.1047 0.4600]);
+figure('Color', ones(1,3), 'Units', 'Normalized', 'Position', [0.4479 0.2508 0.1047 0.4600]);
 
 % Plot the results
-bar(M, 'LineWidth', 1); hold('on');
+bar(M, 'LineWidth', 1, 'FaceColor', [0.2078 0.1647 0.5255]); hold('on');
 plot(ones(1,2), [M-S, M+S], 'k-', 'LineWidth', 1);
-plot([0.5,1.5], repmat(chance,1,2), 'k--', 'LineWidth', 1);
 axis([0.5,1.5,0,1]);
 set(gca, 'XTick', [], 'Box', 'Off', 'LineWidth', 1, 'FontSize', 15);
 ylabel('Averaged performance (+/- SEM)');
@@ -81,11 +66,19 @@ ylabel('Averaged performance (+/- SEM)');
 % Save the figure
 if exist('volatility', 'var') && ~isempty(volatility)
     title(upper({sprintf('%s volatility', volatility),''}));
-    save2pdf([wheretosave, sprintf('PerfSimu%s.pdf', upper(volatility))]);
+    save2pdf(fullfile(dirfigsave, sprintf('PerfSimu%s.pdf', upper(volatility))));
 else
     title({'YOUR DATA',''});
-    save2pdf([wheretosave, 'PerfData.pdf']);
+    save2pdf(fullfile(dirfigsave, 'PerfData.pdf'));
 end
+
+% % Temptative of reversal evoked performance (not enough reversals though)
+% rev = find(diff(design.feedbackprob) ~= 0);
+% Nrev = numel(rev);
+% revperf = NaN(Nrev,10+20+1);
+% for i = 1:Nrev
+%     revperf(i,:) = data.outcome(rev(i)-10:rev(i)+20);
+% end
 
 %% Model-based analysis: grid-search
 %  =================================
@@ -124,7 +117,7 @@ for i = 1:3, LH{i} = exp(LLH{i}); end
 %  ====================
 
 % Prepare the figure
-figure('Position', [0.2547 0.3842 0.4911 0.1933]);
+figure('Color', ones(1,3), 'Units', 'Normalized', 'Position', [0.2547 0.3842 0.4911 0.1933]);
 
 % Display the log-likelihood
 subplot(1,3,1);
@@ -171,16 +164,16 @@ axis('off'); axis([-1,1,-1,1]);
 
 % Save the figure
 if exist('volatility', 'var') && ~isempty(volatility)
-    save2pdf([wheretosave, sprintf('GsSimu%s.pdf', upper(volatility))]);
+    save2pdf(fullfile(dirfigsave, sprintf('GsSimu%s.pdf', upper(volatility))));
 else
-    save2pdf([wheretosave, 'GsData.pdf']);
+    save2pdf(fullfile(dirfigsave, 'GsData.pdf'));
 end
 
 %% Compare models
 %  ==============
 
 % Prepare the figure
-figure('Position', [0.2266 0.3783 0.5469 0.2042]);
+figure('Color', ones(1,3), 'Units', 'Normalized', 'Position', [0.2266 0.3783 0.5469 0.2042]);
 models = {'RL + Softmax', 'RL + \epsilon-greedy', 'RL + LMR'};
 
 % Display the likelihood of the first model
@@ -239,9 +232,9 @@ axis('off'); axis([-1,1,-1,1]);
 
 % Save the figure
 if exist('volatility', 'var') && ~isempty(volatility)
-    save2pdf([wheretosave, sprintf('BmsSimu%s.pdf', upper(volatility))]);
+    save2pdf(fullfile(dirfigsave, sprintf('BmsSimu%s.pdf', upper(volatility))));
 else
-    save2pdf([wheretosave, 'BmsData.pdf']);
+    save2pdf(fullfile(dirfigsave, 'BmsData.pdf'));
 end
 
 %% Run simulations with the best parameters
@@ -257,7 +250,7 @@ best_beta = beta(best_b);
 simu = MBcourse_RLobs_Simulation(best_alpha, {'Softmax', best_beta}, design.feedback, 1, data.choice);
 
 % Prepare the window
-figure('Position', [0.2328 0.3892 0.5344 0.1825]);
+figure('Color', ones(1,3), 'Units', 'Normalized', 'Position', [0.2328 0.3892 0.5344 0.1825]);
 col = mat2cell(winter(6), ones(1,6)); col = col([2,5],:);
 
 % Plot the properties of the design
@@ -290,8 +283,8 @@ xlabel('Trials'); ylabel('Probability');
 % Save the figure
 if exist('volatility', 'var') && ~isempty(volatility)
     ylabel(upper({sprintf('%s volatility', volatility),''}), 'FontWeight', 'Bold');
-    save2pdf([wheretosave, sprintf('BestSimu%s.pdf', upper(volatility))]);
+    save2pdf(fullfile(dirfigsave, sprintf('BestSimu%s.pdf', upper(volatility))));
 else
     ylabel({'YOUR DATA',''}, 'FontWeight', 'Bold');
-    save2pdf([wheretosave, 'BestSimuData.pdf']);
+    save2pdf(fullfile(dirfigsave, 'BestSimuData.pdf'));
 end
