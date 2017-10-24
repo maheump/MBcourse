@@ -5,7 +5,10 @@ nTrials = sum(nTrialsPerBlocks);
 nBlocks = numel(nTrialsPerBlocks);
 
 % Get reward probability for one of the stimuli in each block
-probTrial = repmat([pReward, 1-pReward], 1, nBlocks/2);
+probTrial = repmat([pReward, 1-pReward], 1, floor(nBlocks/2));
+if mod(nBlocks/2, 1) ~= 0
+    probTrial = [probTrial, repmat(pReward, 1, nTrialsPerBlocks(end))];
+end
 
 % Prepare outputs
 feedbackprob = NaN(nTrials, 1);

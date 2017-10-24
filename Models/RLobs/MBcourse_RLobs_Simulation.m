@@ -8,10 +8,11 @@ if ~iscell(linkSpec), linkSpec = {linkSpec}; end
 [nTrials, nStims] = size(fullOutcome);
 
 % Prepare outputs
-choice        = NaN(nTrials, nSimus);
-choiceOutcome = NaN(nTrials, nSimus);
-values        = NaN(nTrials, nStims, nSimus);
-choiceProba   = NaN(nTrials, nStims, nSimus);
+choice           = NaN(nTrials, nSimus);
+choiceOutcome    = NaN(nTrials, nSimus);
+predictionErrors = NaN(nTrials, nSimus);
+values           = NaN(nTrials, nStims, nSimus);
+choiceProba      = NaN(nTrials, nStims, nSimus);
 
 % For each agent to simulate
 for s = 1:nSimus
@@ -19,6 +20,7 @@ for s = 1:nSimus
     % Define initial value of each stimulus
     v0 = ones(1,2) ./ nStims;
     v  = v0;
+    pe = NaN(1,nTrials);
     
     % For each trial
     for t = 1:nTrials
@@ -34,7 +36,7 @@ for s = 1:nSimus
             else,              c = 2; end
             
         % Or use choices already made by the subject (used for the fitting
-        % procedure
+        % procedure)
         else, c = subchoices(t);
         end
         choice(t,s) = c;
@@ -47,9 +49,12 @@ for s = 1:nSimus
         choiceProba(t,:,s) = p;
         
         % Update values
-        pe  = r - v(c); % compute prediction error
-        v(c)= v(c) + (alpha * pe); % update value
+        pe(t)  = r - v(c); % compute prediction error
+        v(c)= v(c) + (alpha * pe(t)); % update value
     end
+    
+    % Store the values of prediction errors
+    predictionErrors(:,s) = pe;
     
     % Store the feedback the subject received
     c1 = choice(:,s) == 1;
@@ -59,12 +64,13 @@ for s = 1:nSimus
 end
 
 % Export the information
-out               = [];
-out.alpha         = alpha;
-out.linkSpec      = linkSpec;
-out.choice        = choice;
-out.choiceOutcome = choiceOutcome;
-out.values        = values;
-out.choiceProba   = choiceProba;
+out                  = [];
+out.alpha            = alpha;
+out.linkSpec         = linkSpec;
+out.choice           = choice;
+out.choiceOutcome    = choiceOutcome;
+out.predictionErrors = predictionErrors;
+out.values           = values;
+out.choiceProba      = choiceProba;
 
 end

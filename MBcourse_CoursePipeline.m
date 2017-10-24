@@ -35,7 +35,7 @@ fprintf('\n=====> DATA ACQUIRED\n');
 
 % Locate the data file
 datdir = fullfile(expedir, 'data');
-datafile = dir(fullfile(datdir, sprintf('tutorialRevLearn_*_s%03.0f_data.mat', s)));
+datafile = dir(fullfile(datdir, sprintf('tutorialRevLearn_*_s%03.0f_data*.mat', s)));
 datafile = fullfile(datdir, datafile.name);
 
 % Define the 
@@ -46,7 +46,7 @@ mkdir(fullfile(coursedir, datafolder));
 % Copy the file to the 
 datelab = datestr(now, 'ddmmyy');
 mvdatafile = fullfile(coursedir, datafolder, sprintf('DataForCourse_%s.mat', datelab));
-[success, msg, msgid] = movefile(datafile, mvdatafile);
+[success, msg, msgid] = copyfile(datafile, mvdatafile);
 fprintf('\n=====> DATA FILE MOVED TO ANALYSIS REPOSITORY\n');
 
 %% PREPROCESS THE DATA
@@ -81,8 +81,8 @@ fprintf('\n=====> DATA SUCCESSFULY PREPROCESSED\n');
 %  =======================
 
 % Specify where to save 
-coursedir = '/Users/Maxime/Documents/My courses/A hands-on introduction to the model-based approach in neuroscience/';
-dirfigsave = fullfile(coursedir, 'data');
+coursedir2 = '/Users/Maxime/Documents/My courses/A hands-on introduction to the model-based approach in neuroscience/';
+dirfigsave = fullfile(coursedir2, 'data');
 
 % Perform model-free and model-based analyses
 MBcourse_AnalyseData;
@@ -95,15 +95,15 @@ close('all');
 setenv('PATH', [getenv('PATH') ':/Library/TeX/texbin']);
 
 % Replace spaces " " by "\ " to ensure LaTeX is working
-coursedir = strrep(coursedir, ' ', '\ ');
+coursedir2 = strrep(coursedir2, ' ', '\ ');
 
 % Update the slides with the new figures using LaTeX composition
 slidesfile = 'Computational_neuroscience_course.tex';
-cmd = sprintf('cd %s && pdflatex %s', coursedir, slidesfile);
+cmd = sprintf('cd %s && pdflatex %s', coursedir2, slidesfile);
 status = system(cmd, '-echo');
 if ~status, fprintf('\n=====> THE SLIDES WERE SUCCESSFULY UPDATED\n'); end
 
 % Open the updated slides
 disp('=====> THE SLIDES ARE ABOUT TO BE DISPLAYED');
-cmd = sprintf('open %s', fullfile(coursedir, [slidesfile(1:end-3) 'pdf']));
+cmd = sprintf('open %s', fullfile(coursedir2, [slidesfile(1:end-3) 'pdf']));
 [status, result] = system(cmd, '-echo');

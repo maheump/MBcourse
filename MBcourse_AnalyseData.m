@@ -1,4 +1,8 @@
 % Script to analyze individual data.
+% Analysis script for data from a reversal learning task. The data is
+% fitted using variants of the RW reinforcement learning models using
+% grid-search and likelihood estimation. Different versions of the model
+% are compared using standard Bayesian Model Selection techniques.
 % 
 % Maxime Maheu, 11/2016
 
@@ -85,9 +89,9 @@ end
 
 % Define grids
 reso = 100;
-alpha   = linspace(0.05, 0.95, reso);
-beta    = linspace(0,    10,   reso);
-epsilon = linspace(0.05, 0.95, reso);
+alpha   = linspace(0.1, 0.9, reso);
+beta    = linspace(0.1, 8,   reso);
+epsilon = linspace(0.1, 0.9, reso);
 
 % Prepare outputs
 MSE = cell(1,3);
@@ -130,6 +134,16 @@ xlabel('Grid for the \alpha parameter');
 ylabel('Grid for the \beta parameter');
 title('Log-likelihood');
 
+% Find the best parameters
+[~, bestidx] = max(LLH{1}(:));
+[best_b, best_a] = ind2sub(size(LH{1}), bestidx);
+best_alpha = alpha(best_a);
+best_beta = beta(best_b);
+plot(best_alpha, best_beta, 'k.', 'MarkerSize', 12);
+text(best_alpha, best_beta, ['$\hat{\alpha} = ', num2str(best_alpha, 2), ...
+    ', \hat{\beta} = ', num2str(best_beta, 2), '$'], 'Interpreter', 'LaTeX', ...
+    'HorizontalAlignment', 'Left', 'VerticalAlignment', 'Bottom');
+
 % Display the likelihood
 subplot(1,3,2);
 imagesc(alpha, beta, LH{1}); hold('on');
@@ -140,6 +154,16 @@ set(gca, 'FontSize', 15);
 xlabel('Grid for the \alpha parameter');
 ylabel('Grid for the \beta parameter');
 title('Likelihood');
+
+% Find the best parameters
+[~, bestidx] = max(LH{1}(:));
+[best_b, best_a] = ind2sub(size(LH{1}), bestidx);
+best_alpha = alpha(best_a);
+best_beta = beta(best_b);
+plot(best_alpha, best_beta, 'k.', 'MarkerSize', 12);
+text(best_alpha, best_beta, ['$\hat{\alpha} = ', num2str(best_alpha, 2), ...
+    ', \hat{\beta} = ', num2str(best_beta, 2), '$'], 'Interpreter', 'LaTeX', ...
+    'HorizontalAlignment', 'Left', 'VerticalAlignment', 'Bottom');
 
 % Display the mean-squared error
 subplot(1,3,3);
@@ -152,6 +176,15 @@ xlabel('Grid for the \alpha parameter');
 ylabel('Grid for the \beta parameter');
 title('Mean squared error');
 
+[~, bestidx] = min(MSE{1}(:));
+[best_b, best_a] = ind2sub(size(LH{1}), bestidx);
+best_alpha = alpha(best_a);
+best_beta = beta(best_b);
+plot(best_alpha, best_beta, 'k.', 'MarkerSize', 12);
+text(best_alpha, best_beta, ['$\hat{\alpha} = ', num2str(best_alpha, 2), ...
+    ', \hat{\beta} = ', num2str(best_beta, 2), '$'], 'Interpreter', 'LaTeX', ...
+    'HorizontalAlignment', 'Left', 'VerticalAlignment', 'Bottom');
+
 % Customize the plot
 axes('Units', 'normalized', 'Position', [0 0 1 1])
 if exist('volatility', 'var') && ~isempty(volatility)
@@ -159,7 +192,8 @@ if exist('volatility', 'var') && ~isempty(volatility)
 else
     txt = 'YOUR DATA';
 end
-text(-0.9, 0, txt, 'FontSize', 20, 'FontWeight', 'Bold', 'Rotation', 90);
+text(-0.9, 0, txt, 'FontSize', 20, 'FontWeight', 'Bold', 'Rotation', 90, ...
+    'HorizontalAlignment', 'Center', 'VerticalAlignment', 'Middle');
 axis('off'); axis([-1,1,-1,1]);
 
 % Save the figure
@@ -227,7 +261,8 @@ if exist('volatility', 'var') && ~isempty(volatility)
 else
     txt = 'YOUR DATA';
 end
-text(-0.9, 0, txt, 'FontSize', 20, 'FontWeight', 'Bold', 'Rotation', 90);
+text(-0.9, 0, txt, 'FontSize', 20, 'FontWeight', 'Bold', 'Rotation', 90, ...
+    'HorizontalAlignment', 'Center', 'VerticalAlignment', 'Middle');
 axis('off'); axis([-1,1,-1,1]);
 
 % Save the figure
@@ -239,12 +274,6 @@ end
 
 %% Run simulations with the best parameters
 %  ========================================
-
-% Find the best parameters
-[~, bestidx] = max(LH{1}(:));
-[best_a, best_b] = ind2sub(size(LH{1}), bestidx);
-best_alpha = alpha(best_a);
-best_beta = beta(best_b);
 
 % Simulate a RL observer with these parameters
 simu = MBcourse_RLobs_Simulation(best_alpha, {'Softmax', best_beta}, design.feedback, 1, data.choice);
@@ -287,4 +316,34 @@ if exist('volatility', 'var') && ~isempty(volatility)
 else
     ylabel({'YOUR DATA',''}, 'FontWeight', 'Bold');
     save2pdf(fullfile(dirfigsave, 'BestSimuData.pdf'));
+end
+
+%% Compute prediction error
+%  =========================
+
+% Prepare the window
+figure('Color', ones(1,3), 'Units', 'Normalized', 'Position', [0.2328 0.3892 0.5344 0.1825]);
+
+% Map depicting positive/negative PE
+x = linspace(-1, 1, reso);
+imagesc(1:design.nTrials, x, repmat(x', 1, design.nTrials), 'AlphaData', 1/2); hold('on');
+plot([1, design.nTrials], zeros(1,2), 'k--', 'LineWidth', 1);
+colormap(cbrewer2('RdBu'));
+
+% Display prediction error levels from the observer
+plot(1:design.nTrials, simu.predictionErrors, 'k-', 'LineWidth', 3);
+
+% Customize the axes
+axis('xy');
+set(gca, 'FontSize', 15, 'LineWidth', 1);
+
+% Add some labels
+xlabel('Trials'); ylabel('Prediction error');
+
+if exist('volatility', 'var') && ~isempty(volatility)
+    ylabel(upper({sprintf('%s volatility', volatility),''}), 'FontWeight', 'Bold');
+    save2pdf(fullfile(dirfigsave, sprintf('Pe%s.pdf', upper(volatility))));
+else
+    ylabel({'YOUR DATA',''}, 'FontWeight', 'Bold');
+    save2pdf(fullfile(dirfigsave, 'PeData.pdf'));
 end
